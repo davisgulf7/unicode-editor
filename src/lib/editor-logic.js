@@ -52,10 +52,19 @@ export const transformSelection = (styleName) => {
     } else if (styleName === 'clear') {
         transformedText = clearAllFormatting(selectedText);
     } else {
-        transformedText = applyUnicodeMap(selectedText, styleName);
+        const potentialTransformation = applyUnicodeMap(selectedText, styleName);
+
+        // If applying the style results in the exact same string as what we started with, 
+        // it means the text is already fully formatted to this exact style.
+        // In this case, act as a toggle and clear the formatting instead.
+        if (potentialTransformation === selectedText) {
+            transformedText = clearAllFormatting(selectedText);
+        } else {
+            transformedText = potentialTransformation;
+        }
     }
 
-    if (transformedText === selectedText) return; // No change needed
+    if (transformedText === selectedText) return; // No change needed at all
 
     // Replace the DOM selection with our new text node
     range.deleteContents();
