@@ -176,7 +176,6 @@ body {
   border-left: 1px solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-glass);
-  overflow: hidden;
 }
 
 /* Toolbar */
@@ -187,6 +186,8 @@ body {
   padding: 0.75rem;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid var(--color-border-glass);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
 }
 
 .toolbar-group {
