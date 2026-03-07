@@ -103,9 +103,19 @@ export const applyListFormatting = (listType) => {
     let transformedLines = [];
 
     if (listType === 'bullet') {
-        transformedLines = lines.map(line => `•\u2003${line.replace(/^(?:•|▪|◦|▸|▹|◆|▶)?[\u2003\s]*/, '')}`);
+        transformedLines = lines.map(line => {
+            // Capture any existing leading whitespace (including em-spaces)
+            const match = line.match(/^([\u2003\s]*)/);
+            const indent = match ? match[1] : '';
+            // Remove existing bullets/numbers and space, then add indent + bullet + em-space
+            return `${indent}•\u2003${line.replace(/^(?:[\u2003\s]*)(?:•|▪|◦|▸|▹|◆|▶)?[\u2003\s]*/, '')}`;
+        });
     } else if (listType === 'number') {
-        transformedLines = lines.map((line, index) => `${index + 1}.\u2003${line.replace(/^\d+\.[\u2003\s]*/, '')}`);
+        transformedLines = lines.map((line, index) => {
+            const match = line.match(/^([\u2003\s]*)/);
+            const indent = match ? match[1] : '';
+            return `${indent}${index + 1}.\u2003${line.replace(/^(?:[\u2003\s]*)\d+\.[\u2003\s]*/, '')}`;
+        });
     }
 
     const transformedText = transformedLines.join('\n');
