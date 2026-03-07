@@ -103,9 +103,9 @@ export const applyListFormatting = (listType) => {
     let transformedLines = [];
 
     if (listType === 'bullet') {
-        transformedLines = lines.map(line => `• ${line.replace(/^• /, '')}`);
+        transformedLines = lines.map(line => `•\u2003${line.replace(/^(?:•|▪|◦|▸|▹|◆|▶)?[\u2003\s]*/, '')}`);
     } else if (listType === 'number') {
-        transformedLines = lines.map((line, index) => `${index + 1}. ${line.replace(/^\d+\. /, '')}`);
+        transformedLines = lines.map((line, index) => `${index + 1}.\u2003${line.replace(/^\d+\.[\u2003\s]*/, '')}`);
     }
 
     const transformedText = transformedLines.join('\n');
@@ -133,7 +133,7 @@ export const cleanTextForExport = (rootElement) => {
 
     const walk = (node) => {
         if (node.nodeType === Node.TEXT_NODE) {
-            result += node.nodeValue;
+            result += node.nodeValue.replace(/\u200B/g, ''); // Remove Zero-Width Spaces
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             // Block level elements should prepend a newline if they aren't the first element
             if (node.tagName === 'DIV' || node.tagName === 'P') {
@@ -154,4 +154,123 @@ export const cleanTextForExport = (rootElement) => {
 
     walk(rootElement);
     return result;
+};
+
+/**
+ * Intercepts the Enter key to explicitly insert a <br> and handle "Smart List" auto-continuation.
+ */
+export const handleEnterKey = (e) => {
+    e.preventDefault();
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+
+    if (!selection.isCollapsed) {
+        range.deleteContents();
+    }
+
+    let node = range.startContainer;
+    let textBefore = node.nodeType === Node.TEXT_NODE ? node.textContent.substring(0, range.startOffset) : '';
+
+    // Walk back siblings to construct the visual line
+    let current = node.previousSibling;
+    while (current) {
+        if (current.nodeName === 'BR' || current.nodeName === 'DIV' || current.nodeName === 'P') break;
+        textBefore = (current.textContent || '') + textBefore;
+        current = current.previousSibling;
+    }
+
+    const parts = textBefore.split('\n');
+    const lineText = parts[parts.length - 1] || '';
+
+    // Regex to detect indent + optional bullet
+    const listRegex = /^([\u2003\s]*)(?:([•▪◦▸▹◆▶]|\d+\.)[\u2003\s]+)?/;
+    const match = lineText.match(listRegex);
+
+    let indent = match ? match[1] || '' : '';
+    let bullet = match && match[2] ? match[2] : '';
+    let prefixToInsert = '';
+
+    if (bullet || indent) {
+        // If the entire line is JUST the prefix (empty bullet/indent), breakout
+        const isPrefixOnly = new RegExp(`^([\\u2003\\s]*)(?:([•▪◦▸▹◆▶]|\\d+\\.)[\\u2003\\s]+)?$`).test(lineText);
+
+        if (isPrefixOnly) {
+            // Breakout: delete the prefix from the DOM
+            if (node.nodeType === Node.TEXT_NODE && range.startOffset >= lineText.length) {
+                range.setStart(node, range.startOffset - lineText.length);
+                range.deleteContents();
+            } else {
+                for (let i = 0; i < lineText.length; i++) {
+                    document.execCommand('delete', false, null);
+                }
+            }
+            insertNewlineAndPrefix('');
+            return;
+        }
+
+        if (bullet) {
+            if (/^\d+\.$/.test(bullet)) {
+                bullet = `${parseInt(bullet, 10) + 1}.`;
+            }
+            prefixToInsert = `${indent}${bullet}\u2003`;
+        } else {
+            prefixToInsert = indent;
+        }
+    }
+
+    insertNewlineAndPrefix(prefixToInsert);
+};
+
+const insertNewlineAndPrefix = (prefix = '') => {
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+
+    const frag = document.createDocumentFragment();
+    const br = document.createElement('br');
+    frag.appendChild(br);
+
+    let textNode = null;
+    if (prefix) {
+        textNode = document.createTextNode(prefix);
+        frag.appendChild(textNode);
+    }
+
+    const zws = document.createTextNode('\u200B');
+    frag.appendChild(zws);
+
+    range.insertNode(frag);
+
+    range.setStartBefore(zws);
+    range.setEndBefore(zws);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    document.getElementById('editor').dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+/**
+ * Intercepts the Tab key to insert two EM Spaces for hanging indents.
+ */
+export const handleTabKey = (e) => {
+    e.preventDefault();
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+    const range = selection.getRangeAt(0);
+
+    if (!selection.isCollapsed) {
+        range.deleteContents();
+    }
+
+    const indent = document.createTextNode('\u2003\u2003');
+    range.insertNode(indent);
+    range.setStartAfter(indent);
+    range.setEndAfter(indent);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    document.getElementById('editor').dispatchEvent(new Event('input', { bubbles: true }));
 };

@@ -1,5 +1,5 @@
 import './style.css';
-import { transformSelection, applyListFormatting, cleanTextForExport } from './lib/editor-logic';
+import { transformSelection, applyListFormatting, cleanTextForExport, handleEnterKey, handleTabKey } from './lib/editor-logic';
 
 document.addEventListener('DOMContentLoaded', () => {
   const editor = document.getElementById('editor');
@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast();
     } catch (err) {
       console.error('Failed to copy text: ', err);
-      // Fallback for older browsers could go here
       alert("Copy failed. Check console or select manually.");
     }
   });
@@ -54,17 +53,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- State Persistence (Auto-save) ---
-  // Load draft if exists
   const savedDraft = localStorage.getItem('unicode_editor_draft');
   if (savedDraft) {
     editor.innerHTML = savedDraft;
   }
 
-  // Save on input (debounced slightly for performance if needed, but direct is fine for small inputs)
+  // Save on input
   editor.addEventListener('input', () => {
-    // We save the HTML structure so that line breaks and cursor positions are preserved
-    // strictly for the local session. The export function strips this later.
     localStorage.setItem('unicode_editor_draft', editor.innerHTML);
+  });
+
+  // Editor Keydown Overrides (Smart Lists & Space Indenting)
+  editor.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      handleEnterKey(e);
+    } else if (e.key === 'Tab') {
+      handleTabKey(e);
+    } else if (e.key === 'Escape') {
+      editor.blur(); // Accessibility escape hatch from Focus Trap
+    }
   });
 
   // PWA Service Worker Registration
