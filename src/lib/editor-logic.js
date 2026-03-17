@@ -176,19 +176,18 @@ export const handleEnterKey = (e) => {
     if (!selection.rangeCount) return;
     const range = selection.getRangeAt(0);
 
+    // Only delete contents if the user actually highlighted text
     if (!selection.isCollapsed) {
         range.deleteContents();
     }
 
     let node = range.startContainer;
-    let textBefore = node.nodeType === Node.TEXT_NODE ? node.textContent.substring(0, range.startOffset) : '';
+    let textBefore = '';
 
-    // Walk back siblings to construct the visual line
-    let current = node.previousSibling;
-    while (current) {
-        if (current.nodeName === 'BR' || current.nodeName === 'DIV' || current.nodeName === 'P') break;
-        textBefore = (current.textContent || '') + textBefore;
-        current = current.previousSibling;
+    // If we are in a text node, grab the text up to the cursor.
+    // Otherwise, we are likely at the true start/end of the editor element itself.
+    if (node.nodeType === Node.TEXT_NODE) {
+        textBefore = node.textContent.substring(0, range.startOffset);
     }
 
     const parts = textBefore.split('\n');
