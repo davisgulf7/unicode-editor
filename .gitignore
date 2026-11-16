@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Project records stay local (David, 2026-11-15: the repository is public)
+/status.md
+/memory/
+/planning/
