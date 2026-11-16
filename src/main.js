@@ -4,6 +4,7 @@ import { transformSelection, applyListFormatting, cleanTextForExport, handleEnte
 document.addEventListener('DOMContentLoaded', () => {
   const editor = document.getElementById('editor');
   const copyBtn = document.getElementById('btn-copy');
+  const clearBtn = document.getElementById('btn-clear');
   const toast = document.getElementById('toast');
 
   // Wire up formatting buttons
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       await navigator.clipboard.writeText(pureText);
-      showToast();
+      showToast('Copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy text: ', err);
       alert("Copy failed. Check console or select manually.");
@@ -44,7 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Toast animation
   let toastTimeout;
-  function showToast() {
+  function showToast(message) {
+    toast.textContent = message;
     toast.classList.add('show');
     clearTimeout(toastTimeout);
     toastTimeout = setTimeout(() => {
@@ -52,15 +54,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2500);
   }
 
-  // --- State Persistence (Auto-save) ---
-  const savedDraft = localStorage.getItem('unicode_editor_draft');
-  if (savedDraft) {
-    editor.innerHTML = savedDraft;
+  // No auto-save: every load (refresh) starts with an empty editor.
+  // Remove any draft saved by earlier versions so it stops coming back.
+  try {
+    localStorage.removeItem('unicode_editor_draft');
+  } catch {
+    // Storage blocked (private mode, site data disabled): nothing was saved.
   }
 
-  // Save on input
-  editor.addEventListener('input', () => {
-    localStorage.setItem('unicode_editor_draft', editor.innerHTML);
+  // Clear button: empties the editor. Done as an editing command where the
+  // browser supports it, so Ctrl/Cmd+Z can bring the text back.
+  clearBtn.addEventListener('click', () => {
+    editor.focus();
+    const undoable = document.execCommand('selectAll') && document.execCommand('delete');
+    if (!undoable || editor.textContent !== '') {
+      editor.textContent = '';
+    }
+    showToast('Text cleared');
   });
 
   // Editor Keydown Overrides (Smart Lists & Space Indenting)

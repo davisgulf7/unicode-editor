@@ -15,6 +15,17 @@
   <div id="app" class="liquid-container">
     <header class="glass-header">
       <h1>GulfStudios Unicode Composer</h1>
+      <div class="header-actions">
+      <button id="btn-clear" class="btn-secondary" aria-label="Clear all text">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          aria-hidden="true" focusable="false">
+          <path d="M3 6h18" />
+          <path d="M8 6V4h8v2" />
+          <path d="M19 6l-1 14H6L5 6" />
+        </svg>
+        <span>Clear</span>
+      </button>
       <button id="btn-copy" class="btn-primary" aria-label="Copy to clipboard">
         <svg xmlns="http://www.w3.org/-2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -24,6 +35,7 @@
         </svg>
         <span class="copy-text">Copy</span>
       </button>
+      </div>
     </header>
 
     <main class="editor-container glass-panel">
@@ -120,7 +132,7 @@
       <div id="editor" class="editor-area" contenteditable="true" aria-multiline="true" role="textbox"
         aria-label="Text Editor"></div>
 
-      <div id="toast" class="toast hidden">Copied to clipboard!</div>
+      <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
     </main>
   </div>
 
